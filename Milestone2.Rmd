@@ -1,0 +1,124 @@
+---
+title             : "Final Project: Milestone 2"
+shorttitle        : "Milestone 2"
+author: 
+  - name          : "Mourad Askar, Gerardo Palacios, Joe Paszkiewicz, Ramoskaite, Evelina "
+    affiliation   : "1,2"
+affiliation:
+  - id            : "1"
+    institution   : "DSC 425 - Time Series Analysis and Forecasting"
+  - id            : "2"
+    institution   : "DePaul University"
+floatsintext      : yes
+figsintext        : yes
+figurelist        : yes
+tablelist         : yes
+footnotelist      : no
+linenumbers       : no
+mask              : no
+draft             : no
+documentclass     : "apa6"
+classoption       : "man"
+output            :  papaja::apa6_pdf
+fontsize          : 11pt
+header-includes:
+  - \usepackage{setspace}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \usepackage{xcolor}
+  - \usepackage[backend=biber]{biblatex}
+  - \addbibresource{r-references.bib}
+  - \usepackage{afterpage}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+editor_options: 
+  chunk_output_type: console
+---
+
+\singlespacing
+```{r setup, include = FALSE,echo=FALSE}
+library("papaja")
+library(lubridate)
+library(tidyquant)
+library(zoo)
+library(knitr)
+library(kableExtra)
+library(xtable)
+library(ggfortify)
+
+setwd('C:/Users/G_MAN/OneDrive/DePaul/Time Series Analysis/Time Series Analysis/Final Project')
+
+```
+
+# Crypto-Currency and Stock Data
+
+
+
+```{r data1, include=T,echo=F,warning=FALSE}
+# getSymbols(c('ETH-USD'),from = '2016-10-01' , to='2021-09-30')
+# getSymbols(c('RIOT'),from = '2016-10-01' , to='2021-09-30')
+data <- tq_get(c('ETH-USD','BTC-USD','RIOT'),
+               from = '2016-10-01',
+               to = '2021-09-30',
+               get = "stock.prices")
+
+data <- zoo(data$adjusted,data$date)
+summary(data)
+```
+
+## Graphing the Time Series
+Figure 1 shows the time series for Ethereum over the past 5 years. It appears to be a  multiplicative, non-stationary time series with an exponential positive trend that has exploded most recently in 2021.
+
+
+```{r data2, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+autoplot(data)
+
+```
+
+Figure 2, we can see the time series with a log transformation. It has transformed the exponential behavior into something more linear. There still remains a general increasing trend, and appears to be more additive. 
+\newpage
+```{r data3, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+autoplot(log(data))
+
+```
+
+Figure 3, we can see the log returns. The plot shows general white noise with a few outliers in 2017 and 2020. 
+
+
+```{r data4, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+autoplot(diff(log(data)))
+
+```
+\newpage
+## Auto-correlation
+
+Figure 4 is the ACF plot. Auto-correlation has a strong presence in this time series. The ACF gradually decreases indicating a non-stationary series. 
+
+```{r data5, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+acf(log(data), na.action = na.pass)
+```
+
+\newpage
+## Ljung Box Test
+
+This can be further confirmed by performing the Ljung Box test. At lag 1, the Ljung-Box p-value is close to zero. This indicates that at the 99% confidence, the null hypothesis is rejected and one can conclude that the series is not independently distributed and exhibit serial correlation.
+
+```{r data6, include=T,echo=T,warning=F}
+
+Box.test(log(data), lag = 1, type = "Ljung-Box")
+```
+
+
+
