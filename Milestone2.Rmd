@@ -43,7 +43,7 @@ header-includes:
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 \singlespacing
@@ -57,23 +57,44 @@ library(kableExtra)
 library(xtable)
 library(ggfortify)
 
-setwd('C:/Users/G_MAN/OneDrive/DePaul/Time Series Analysis/Time Series Analysis/Final Project')
+setwd('/Volumes/MiData/DePaul/DSC425 Labs/Project/Final-Project')
 
 ```
 
 # Crypto-Currency and Stock Data
+```{r}
+start_date = '2016-10-01'
+end_date = '2021-09-30'
+tickers = c('RIOT','COIN','HOOD','BTC-USD','ETH-USD','ADA-USD')
+getSymbols(tickers, from=start_date, tp=end_date, warnings=FALSE, auto.assign=TRUE)
+```
 
 
 
 ```{r data1, include=T,echo=F,warning=FALSE}
 # getSymbols(c('ETH-USD'),from = '2016-10-01' , to='2021-09-30')
 # getSymbols(c('RIOT'),from = '2016-10-01' , to='2021-09-30')
-data <- tq_get(c('ETH-USD','BTC-USD','RIOT'),
-               from = '2016-10-01',
-               to = '2021-09-30',
-               get = "stock.prices")
+#data <- tq_get(c('ETH-USD','BTC-USD','RIOT'),
+#               from = '2016-10-01',
+#               to = '2021-09-30',
+#               get = "stock.prices")
 
-data <- zoo(data$adjusted,data$date)
+#data <- zoo(data$adjusted,data$date)
+#summary(data)
+```
+
+```{r data1, include=T,echo=F,warning=FALSE}
+stock = `RIOT`
+# Get the column name of the adjusted price
+stock.Adjusted.ColName = names(stock)[6]
+# Get the stock adjusted values
+stockAdj = stock[,stock.Adjusted.ColName]
+
+stockAdj.log = log(stockAdj)
+stockAdj.returns = diff(stockAdj)
+stockAdj.log.returns = diff(stockAdj.log)  
+
+data <- stockAdj
 summary(data)
 ```
 
