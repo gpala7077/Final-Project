@@ -2,7 +2,7 @@
 title             : "Final Project: Milestone 2"
 shorttitle        : "Milestone 2"
 author: 
-  - name          : "Mourad Askar, Gerardo Palacios, Joe Paszkiewicz, Ramoskaite, Evelina "
+  - name          : "Mourad Askar, Gerardo Palacios, Joe Paszkiewicz, Evelina Ramoskaite "
     affiliation   : "1,2"
 affiliation:
   - id            : "1"
@@ -106,12 +106,17 @@ autoplot(diff(log(data)))
 ```
 \newpage
 ## Auto-correlation
-
+## ACF of the time series 
 Figure 4 is the ACF plot. Auto-correlation has a strong presence in this time series. The ACF gradually decreases indicating a non-stationary series. 
 
 ```{r data5, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
 
-acf(log(data), na.action = na.pass)
+acf((data), na.action = na.pass)
+```
+# ACF of the Log Returns
+```{r data5, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+acf(diff(log(data)), na.action = na.pass)
 ```
 
 \newpage
@@ -184,14 +189,22 @@ autoplot(diff(log(stock.ADA))) +
 
 ```
 \newpage
-## Auto-correlation
+## Auto-correlation for the series 
 
 The ACF plots shows that Cardano's Auto-correlation has a strong presence in this time series. The ACF gradually decreases indicating a non-stationary series. Coinbase's ACF quickly decays indicating also indicating non-stationary series.
 
 ```{r echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
 
-acf(log(stock.COIN), na.action = na.pass)
-acf(log(stock.ADA), na.action = na.pass)
+acf((stock.COIN), na.action = na.pass)
+acf((stock.ADA), na.action = na.pass)
+
+```
+# Auto-correlation for the log returns
+
+```{r echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
+
+acf(diff(log(stock.COIN)), na.action = na.pass)
+acf(diff(log(stock.ADA)), na.action = na.pass)
 
 ```
 
@@ -262,13 +275,19 @@ autoplot(diff(log(stock.BTC))) +
 
 \newpage
 
-## Acf - Logged Bitcoin
+## Acf for the Bitcoin Series
 
-The acf plot of the logged series has a very slow decay, indicating that the series is not stationary, even with the transformation.
-
+The acf plot of series has a very slow decay, indicating that the series is not stationary.
 ```{r, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
 
-acf((log(stock.BTC)), na.action = na.pass)
+acf(((stock.BTC)), na.action = na.pass)
+
+```
+## Acf of the log returns 
+The acf of the log returns is shows little activity above the confidence interval, showing behavior akin to white noise. 
+```{r, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+acf(diff(log(stock.BTC)), na.action = na.pass)
 
 ```
 \newpage
