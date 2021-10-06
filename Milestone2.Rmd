@@ -65,7 +65,7 @@ setwd('/Volumes/MiData/DePaul/DSC425 Labs/Project/Final-Project')
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 start_date = '2016-10-01'
 end_date = '2021-09-30'
-tickers = c('RIOT','COIN','HOOD','BTC-USD','ETH-USD','ADA-USD')
+tickers = c('SPY','RIOT','COIN','HOOD','BTC-USD','ETH-USD','ADA-USD','DOGE-USD')
 getSymbols(tickers, from=start_date, tp=end_date, warnings=FALSE, auto.assign=TRUE)
 ```
 
@@ -105,7 +105,7 @@ autoplot(data)
 
 Figure 2, we can see the time series with a log transformation. It has transformed the exponential behavior into something more linear. There still remains a general increasing trend, and appears to be more additive. 
 \newpage
-```{r data3, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+```{r data3, echo=T, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE, include=T}
 autoplot(log(data))
 
 ```
@@ -113,7 +113,7 @@ autoplot(log(data))
 Figure 3, we can see the log returns. The plot shows general white noise with a few outliers in 2017 and 2020. 
 
 
-```{r data4, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+```{r data4, echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
 autoplot(diff(log(data)))
 
 ```
@@ -140,7 +140,7 @@ Box.test(log(data), lag = 1, type = "Ljung-Box")
 # Coinbase and Cardano
 
 ## Coinbase Summary Statistics
-```{r echo=F, warning=FALSE, include=T}
+```{r echo=FALSE, warning=FALSE}
 stock = `COIN`
 # Get the column name of the adjusted price
 stock.Adjusted.ColName = names(stock)[6]
@@ -151,7 +151,7 @@ stock.COIN <- stockAdj
 summary(stock.COIN)
 ```
 ## Cardano Summary Statistics
-```{r echo=F, warning=FALSE, include=T}
+```{r echo=FALSE, warning=FALSE}
 stock = `ADA-USD`
 # Get the column name of the adjusted price
 stock.Adjusted.ColName = names(stock)[6]
@@ -167,7 +167,7 @@ summary(stock.ADA)
 The figures below show the time series for Coinbase  and Cardano (ADA-USD) since their inception in 2021 and 2017, respectively. While Cardano appears to be a multiplicative, non-stationary time series, Coinbase seem to be an additive time series.
 
 
-```{r, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+```{r echo=FALSE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
 autoplot(stock.COIN) +
   ggtitle('Coinbase')
 
@@ -177,7 +177,7 @@ autoplot(stock.ADA) +
 
 In the figures below we can see both time series with a log transformation. The log transformation did not affect Coinbase much, confirming the additive nature. On the other hand, it has transformed Cardano's into a more stable form.
 \newpage
-```{r, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+```{r echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
 autoplot(log(stock.COIN)) +
   ggtitle('Coinbase "Log"')
 
@@ -188,7 +188,7 @@ autoplot(log(stock.ADA)) +
 The figures below, we can see the log returns. The plot shows general white noise in both tickers with a few outliers fro Cardano in late 2017 and early 2020. 
 
 
-```{r, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+```{r echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
 autoplot(diff(log(stock.COIN))) +
   ggtitle('Coinbase "Log Returns"')
 
@@ -201,7 +201,7 @@ autoplot(diff(log(stock.ADA))) +
 
 The ACF plots shows that Cardano's Auto-correlation has a strong presence in this time series. The ACF gradually decreases indicating a non-stationary series. Coinbase's ACF quickly decays indicating also indicating non-stationary series.
 
-```{r, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+```{r echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
 
 acf(log(stock.COIN), na.action = na.pass)
 acf(log(stock.ADA), na.action = na.pass)
@@ -214,7 +214,7 @@ acf(log(stock.ADA), na.action = na.pass)
 
 This can be further confirmed by performing the Ljung Box test. At lag 100, the Ljung-Box p-value is close to zero. This indicates that at the 99% confidence, the null hypothesis is rejected and one can conclude that the series is not independently distributed and exhibit serial correlation.
 
-```{r, include=T,echo=T,warning=F}
+```{r echo=TRUE, warning=FALSE}
 
 Box.test(log(stock.COIN), lag = 100, type = "Ljung-Box")
 Box.test(log(stock.ADA), lag = 100, type = "Ljung-Box")
