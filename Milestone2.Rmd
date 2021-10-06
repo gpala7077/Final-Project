@@ -71,7 +71,7 @@ getSymbols(tickers, from=start_date, tp=end_date, warnings=FALSE, auto.assign=TR
 
 
 
-```{r data1, include=T,echo=F,warning=FALSE}
+```{r data1, eval=FALSE, warning=FALSE, include=FALSE}
 # getSymbols(c('ETH-USD'),from = '2016-10-01' , to='2021-09-30')
 # getSymbols(c('RIOT'),from = '2016-10-01' , to='2021-09-30')
 #data <- tq_get(c('ETH-USD','BTC-USD','RIOT'),
@@ -83,7 +83,7 @@ getSymbols(tickers, from=start_date, tp=end_date, warnings=FALSE, auto.assign=TR
 #summary(data)
 ```
 
-```{r data1, include=T,echo=F,warning=FALSE}
+```{r, include=T,echo=F,warning=FALSE}
 stock = `RIOT`
 # Get the column name of the adjusted price
 stock.Adjusted.ColName = names(stock)[6]
