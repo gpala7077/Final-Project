@@ -62,7 +62,7 @@ setwd('/Volumes/MiData/DePaul/DSC425 Labs/Project/Final-Project')
 ```
 
 # Crypto-Currency and Stock Data
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 start_date = '2016-10-01'
 end_date = '2021-09-30'
 tickers = c('RIOT','COIN','HOOD','BTC-USD','ETH-USD','ADA-USD')
