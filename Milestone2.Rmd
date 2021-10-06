@@ -90,10 +90,6 @@ stock.Adjusted.ColName = names(stock)[6]
 # Get the stock adjusted values
 stockAdj = stock[,stock.Adjusted.ColName]
 
-stockAdj.log = log(stockAdj)
-stockAdj.returns = diff(stockAdj)
-stockAdj.log.returns = diff(stockAdj.log)  
-
 data <- stockAdj
 summary(data)
 ```
@@ -140,6 +136,87 @@ This can be further confirmed by performing the Ljung Box test. At lag 1, the Lj
 
 Box.test(log(data), lag = 1, type = "Ljung-Box")
 ```
+\newpage
+# Coinbase and Cardano
+
+## Coinbase Summary Statistics
+```{r echo=F, warning=FALSE, include=T}
+stock = `COIN`
+# Get the column name of the adjusted price
+stock.Adjusted.ColName = names(stock)[6]
+# Get the stock adjusted values
+stockAdj = stock[,stock.Adjusted.ColName]
+
+stock.COIN <- stockAdj
+summary(stock.COIN)
+```
+## Cardano Summary Statistics
+```{r echo=F, warning=FALSE, include=T}
+stock = `ADA-USD`
+# Get the column name of the adjusted price
+stock.Adjusted.ColName = names(stock)[6]
+# Get the stock adjusted values
+stockAdj = stock[,stock.Adjusted.ColName]
+
+stock.ADA <- stockAdj
+summary(stock.ADA)
+```
 
 
+## Graphing the Time Series
+The figures below show the time series for Coinbase  and Cardano (ADA-USD) since their inception in 2021 and 2017, respectively. While Cardano appears to be a multiplicative, non-stationary time series, Coinbase seem to be an additive time series.
 
+
+```{r, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+autoplot(stock.COIN) +
+  ggtitle('Coinbase')
+
+autoplot(stock.ADA) +
+  ggtitle('Cardano ADA-USD')
+```
+
+In the figures below we can see both time series with a log transformation. The log transformation did not affect Coinbase much, confirming the additive nature. On the other hand, it has transformed Cardano's into a more stable form.
+\newpage
+```{r, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+autoplot(log(stock.COIN)) +
+  ggtitle('Coinbase "Log"')
+
+autoplot(log(stock.ADA)) +
+  ggtitle('Cardano ADA-USD "Log"')
+```
+
+The figures below, we can see the log returns. The plot shows general white noise in both tickers with a few outliers fro Cardano in late 2017 and early 2020. 
+
+
+```{r, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+autoplot(diff(log(stock.COIN))) +
+  ggtitle('Coinbase "Log Returns"')
+
+autoplot(diff(log(stock.ADA))) +
+  ggtitle('Cardano ADA-USD "Log Returns"')
+
+```
+\newpage
+## Auto-correlation
+
+The ACF plots shows that Cardano's Auto-correlation has a strong presence in this time series. The ACF gradually decreases indicating a non-stationary series. Coinbase's ACF quickly decays indicating also indicating non-stationary series.
+
+```{r, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+acf(log(stock.COIN), na.action = na.pass)
+acf(log(stock.ADA), na.action = na.pass)
+
+```
+
+\newpage
+
+## Ljung Box Test
+
+This can be further confirmed by performing the Ljung Box test. At lag 100, the Ljung-Box p-value is close to zero. This indicates that at the 99% confidence, the null hypothesis is rejected and one can conclude that the series is not independently distributed and exhibit serial correlation.
+
+```{r, include=T,echo=T,warning=F}
+
+Box.test(log(stock.COIN), lag = 100, type = "Ljung-Box")
+Box.test(log(stock.ADA), lag = 100, type = "Ljung-Box")
+```
+\newpage
