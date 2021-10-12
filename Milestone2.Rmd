@@ -57,9 +57,6 @@ library(knitr)
 library(kableExtra)
 library(xtable)
 library(ggfortify)
-
-setwd('/Volumes/MiData/DePaul/DSC425 Labs/Project/Final-Project')
-
 ```
 
 # Crypto-Currency and Stock Data
