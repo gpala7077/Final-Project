@@ -1,0 +1,319 @@
+---
+title             : "Final Project: Milestone 2"
+shorttitle        : "Milestone 2"
+author: 
+  - name          : "Mourad Askar, Gerardo Palacios, Joe Paszkiewicz, Evelina Ramoskaite "
+    affiliation   : "1,2"
+affiliation:
+  - id            : "1"
+    institution   : "DSC 425 - Time Series Analysis and Forecasting"
+  - id            : "2"
+    institution   : "DePaul University"
+floatsintext      : yes
+figsintext        : yes
+figurelist        : yes
+tablelist         : yes
+footnotelist      : no
+linenumbers       : no
+mask              : no
+draft             : no
+documentclass     : "apa6"
+classoption       : "man"
+output            :  papaja::apa6_pdf
+fontsize          : 11pt
+header-includes:
+  - \usepackage{setspace}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \usepackage{xcolor}
+  - \usepackage[backend=biber]{biblatex}
+  - \addbibresource{r-references.bib}
+  - \usepackage{afterpage}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+editor_options: 
+  chunk_output_type: inline
+---
+
+\singlespacing
+
+```{r setup, include = FALSE,echo=FALSE}
+library("papaja")
+library(lubridate)
+library(tidyquant)
+library(zoo)
+library(knitr)
+library(kableExtra)
+library(xtable)
+library(ggforify)
+```
+
+# Crypto-Currency and Stock Data
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+start_date = '2016-10-01'
+end_date = '2021-09-30'
+tickers = c('SPY','AMD','NVDA','BTC-USD','ETH-USD','LINK-USD','COIN','ADA-USD')
+
+# Read csv file if exists
+if(file.exists('tickers.csv')){
+  stocks = read.csv('tickers.csv')
+  stocks$date = ymd(stocks$date)
+} else{ # Download and write if csv does not exist
+  stocks = tq_get(tickers,
+                  from=start_date,
+                  to=end_date
+                  )[,c('date','symbol','volume','adjusted')]
+  stocks$date = ymd(stocks$date)
+  write.csv(stocks,'tickers.csv', row.names = F)
+}
+
+# A function that will return only one stock as zoo object
+get_stock_zoo <- function(ticker){
+    selected_stock = stocks[stocks$symbol==ticker,]
+    adjusted.price = zoo(
+      selected_stock$adjusted,
+      order.by = selected_stock$date
+      )
+    return(adjusted.price)
+}
+```
+
+```{r, include=T,echo=F,warning=FALSE}
+data <- get_stock_zoo('ETH-USD')
+summary(data)
+```
+
+## Graphing the Time Series
+
+Figure 1 shows the time series for Ethereum over the past 5 years. It appears to be a multiplicative, non-stationary time series with an exponential positive trend that has exploded most recently in 2021.
+
+```{r data2, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+autoplot(data)
+
+```
+
+Figure 2, we can see the time series with a log transformation. It has transformed the exponential behavior into something more linear. There still remains a general increasing trend, and appears to be more additive. \newpage
+
+```{r data3, echo=T, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE, include=T}
+autoplot(log(data))
+
+```
+
+Figure 3, we can see the log returns. The plot shows general white noise with a few outliers in 2017 and 2020.
+
+```{r data4, echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
+autoplot(diff(log(data)))
+
+```
+
+\newpage
+
+## Auto-correlation
+
+## ACF of the time series
+
+Figure 4 is the ACF plot. Auto-correlation has a strong presence in this time series. The ACF gradually decreases indicating a non-stationary series.
+
+```{r data5, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+acf((data), na.action = na.pass)
+```
+
+# ACF of the Log Returns
+
+```{r data6, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+acf(diff(log(data)), na.action = na.pass)
+```
+
+\newpage
+
+## Ljung Box Test
+
+This can be further confirmed by performing the Ljung Box test. At lag 1, the Ljung-Box p-value is close to zero. This indicates that at the 99% confidence, the null hypothesis is rejected and one can conclude that the series is not independently distributed and exhibit serial correlation.
+
+```{r data7, include=T,echo=T,warning=F}
+
+Box.test(log(data), lag = 1, type = "Ljung-Box")
+```
+
+\newpage
+
+# Coinbase and Cardano
+
+## Coinbase Summary Statistics
+
+```{r data8, echo=FALSE, warning=FALSE}
+stock.COIN <- get_stock_zoo('COIN')
+summary(stock.COIN)
+```
+
+## Cardano Summary Statistics
+
+```{r data9, echo=FALSE, warning=FALSE}
+stock.ADA <- get_stock_zoo('ADA-USD')
+summary(stock.ADA)
+```
+
+## Graphing the Time Series
+
+The figures below show the time series for Coinbase and Cardano (ADA-USD) since their inception in 2021 and 2017, respectively. While Cardano appears to be a multiplicative, non-stationary time series, Coinbase seem to be an additive time series.
+
+```{r data10, echo=FALSE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
+autoplot(stock.COIN) +
+  ggtitle('Coinbase')
+
+autoplot(stock.ADA) +
+  ggtitle('Cardano ADA-USD')
+```
+
+In the figures below we can see both time series with a log transformation. The log transformation did not affect Coinbase much, confirming the additive nature. On the other hand, it has transformed Cardano's into a more stable form. \newpage
+
+```{r data11, echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
+autoplot(log(stock.COIN)) +
+  ggtitle('Coinbase "Log"')
+
+autoplot(log(stock.ADA)) +
+  ggtitle('Cardano ADA-USD "Log"')
+```
+
+The figures below, we can see the log returns. The plot shows general white noise in both tickers with a few outliers fro Cardano in late 2017 and early 2020.
+
+```{r data12, echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
+autoplot(diff(log(stock.COIN))) +
+  ggtitle('Coinbase "Log Returns"')
+
+autoplot(diff(log(stock.ADA))) +
+  ggtitle('Cardano ADA-USD "Log Returns"')
+
+```
+
+\newpage
+
+## Auto-correlation for the series
+
+The ACF plots shows that Cardano's Auto-correlation has a strong presence in this time series. The ACF gradually decreases indicating a non-stationary series. Coinbase's ACF quickly decays indicating also indicating non-stationary series.
+
+```{r data13, echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
+
+acf((stock.COIN), na.action = na.pass)
+acf((stock.ADA), na.action = na.pass)
+
+```
+
+# Auto-correlation for the log returns
+
+```{r data14, echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
+
+acf(diff(log(stock.COIN)), na.action = na.pass)
+acf(diff(log(stock.ADA)), na.action = na.pass)
+
+```
+
+\newpage
+
+## Ljung Box Test
+
+This can be further confirmed by performing the Ljung Box test. At lag 100, the Ljung-Box p-value is close to zero. This indicates that at the 99% confidence, the null hypothesis is rejected and one can conclude that the series is not independently distributed and exhibit serial correlation.
+
+```{r data15, echo=TRUE, warning=FALSE}
+
+Box.test(log(stock.COIN), lag = 100, type = "Ljung-Box")
+Box.test(log(stock.ADA), lag = 100, type = "Ljung-Box")
+```
+
+```{=tex}
+\newpage
+\newpage
+```
+# Bitcoin
+
+## Bitcoin Summary Statistics
+
+##From 2016 to 2021, Bitcoin had a minimum value of \$610, and a maximum value of \$63,503.
+
+```{r data16, echo=F, warning=FALSE, include=T}
+stock.BTC <- get_stock_zoo('BTC-USD')
+summary(stock.BTC)
+```
+
+\newpage
+
+## Graphing the Bitcoin Time Series
+
+The figures below show the time series for bitcoin(BTC-USD)from 2016 to 2021. Bitcoin appears to be a multiplicative, non-stationary time series.
+
+```{r data17, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+autoplot(stock.BTC) +
+  ggtitle('Bitcoin Prices in USD')
+
+```
+
+\newpage
+
+## Log Transformed Series
+
+```{r data18, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+autoplot(log(stock.BTC)) +
+  ggtitle('Bitcoin Price in USD (Log)')
+
+```
+
+\newpage
+
+## Log Returns
+
+The log return plot for Bitcoin shows a stark contrast to the original plot. It is more uniform in comparison, confirming that the time series shows strong multiplicative behavior.
+
+```{r data19, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+autoplot(diff(log(stock.BTC))) +
+  ggtitle('Bitcoin Log Returns')
+
+```
+
+\newpage
+
+## Acf for the Bitcoin Series
+
+The acf plot of series has a very slow decay, indicating that the series is not stationary.
+
+```{r data20, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+acf(((stock.BTC)), na.action = na.pass)
+
+```
+
+## Acf of the log returns
+
+The acf of the log returns is shows little activity above the confidence interval, showing behavior akin to white noise.
+
+```{r data21, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+acf(diff(log(stock.BTC)), na.action = na.pass)
+
+```
+
+\newpage
+
+## Ljung-Box test
+
+The Ljung box test rejects the null hypothesis that the log(Bitcoin)series is stationary. However, when the test is run on the log returns, the null hypothesis is not rejected, showing some promise for forecasting.
+
+```{r data22, include=T,echo=T,warning=F}
+# log (Bitcoin)
+Box.test((log(stock.BTC)), lag = 100, type = "Ljung-Box")
+# log returns
+Box.test(diff(log(stock.BTC)), lag = 100, type = "Ljung-Box")
+```
