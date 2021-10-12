@@ -67,7 +67,7 @@ setwd('/Volumes/MiData/DePaul/DSC425 Labs/Project/Final-Project')
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 start_date = '2016-10-01'
 end_date = '2021-09-30'
-tickers = c('SPY','AMD','NVDA','BTC-USD','ETH-USD','LINK-USD')
+tickers = c('SPY','AMD','NVDA','BTC-USD','ETH-USD','LINK-USD','COIN','ADA-USD')
 
 # Read csv file if exists
 if(file.exists('tickers.csv')){
@@ -77,18 +77,19 @@ if(file.exists('tickers.csv')){
   stocks = tq_get(tickers,
                   from=start_date,
                   to=end_date
-                  )[,c('symbol','date','volume','adjusted')]
+                  )[,c('date','symbol','volume','adjusted')]
   stocks$date = ymd(stocks$date)
-  write.csv(stocks,'tickers.csv')
+  write.csv(stocks,'tickers.csv', row.names = F)
 }
 
 # A function that will return only one stock as zoo object
 get_stock_zoo <- function(ticker){
-    data = zoo(
-      stocks[stocks$symbol==ticker,c('adjusted')],
-      order.by = stocks[stocks$symbol==ticker,c('date')]
+    selected_stock = stocks[stocks$symbol==ticker,]
+    adjusted.price = zoo(
+      selected_stock$adjusted,
+      order.by = selected_stock$date
       )
-    return(data)
+    return(adjusted.price)
 }
 ```
 
