@@ -58,7 +58,7 @@ library(kableExtra)
 library(xtable)
 library(ggfortify)
 
-# setwd('/Volumes/MiData/DePaul/DSC425 Labs/Project/Final-Project')
+setwd('/Volumes/MiData/DePaul/DSC425 Labs/Project/Final-Project')
 
 ```
 
@@ -67,18 +67,33 @@ library(ggfortify)
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 start_date = '2016-10-01'
 end_date = '2021-09-30'
-tickers = c('SPY','RIOT','COIN','HOOD','BTC-USD','ETH-USD','ADA-USD','DOGE-USD')
-getSymbols(tickers, from=start_date, tp=end_date, warnings=FALSE, auto.assign=TRUE)
+tickers = c('SPY','AMD','NVDA','BTC-USD','ETH-USD','LINK-USD')
+
+# Read csv file if exists
+if(file.exists('tickers.csv')){
+  stocks = read.csv('tickers.csv')
+  stocks$date = ymd(stocks$date)
+} else{ # Download and write if csv does not exist
+  stocks = tq_get(tickers,
+                  from=start_date,
+                  to=end_date
+                  )[,c('symbol','date','volume','adjusted')]
+  stocks$date = ymd(stocks$date)
+  write.csv(stocks,'tickers.csv')
+}
+
+# A function that will return only one stock as zoo object
+get_stock_zoo <- function(ticker){
+    data = zoo(
+      stocks[stocks$symbol==ticker,c('adjusted')],
+      order.by = stocks[stocks$symbol==ticker,c('date')]
+      )
+    return(data)
+}
 ```
 
 ```{r, include=T,echo=F,warning=FALSE}
-stock = `ETH-USD`
-# Get the column name of the adjusted price
-stock.Adjusted.ColName = names(stock)[6]
-# Get the stock adjusted values
-stockAdj = stock[,stock.Adjusted.ColName]
-
-data <- stockAdj
+data <- get_stock_zoo('ETH-USD')
 summary(data)
 ```
 
@@ -143,26 +158,14 @@ Box.test(log(data), lag = 1, type = "Ljung-Box")
 ## Coinbase Summary Statistics
 
 ```{r data8, echo=FALSE, warning=FALSE}
-stock = `COIN`
-# Get the column name of the adjusted price
-stock.Adjusted.ColName = names(stock)[6]
-# Get the stock adjusted values
-stockAdj = stock[,stock.Adjusted.ColName]
-
-stock.COIN <- stockAdj
+stock.COIN <- get_stock_zoo('COIN')
 summary(stock.COIN)
 ```
 
 ## Cardano Summary Statistics
 
 ```{r data9, echo=FALSE, warning=FALSE}
-stock = `ADA-USD`
-# Get the column name of the adjusted price
-stock.Adjusted.ColName = names(stock)[6]
-# Get the stock adjusted values
-stockAdj = stock[,stock.Adjusted.ColName]
-
-stock.ADA <- stockAdj
+stock.ADA <- get_stock_zoo('ADA-USD')
 summary(stock.ADA)
 ```
 
@@ -244,13 +247,7 @@ Box.test(log(stock.ADA), lag = 100, type = "Ljung-Box")
 ##From 2016 to 2021, Bitcoin had a minimum value of \$610, and a maximum value of \$63,503.
 
 ```{r data16, echo=F, warning=FALSE, include=T}
-stock = `BTC-USD`
-# Get the column name of the adjusted price
-stock.Adjusted.ColName = names(stock)[6]
-# Get the stock adjusted values
-stockAdj = stock[,stock.Adjusted.ColName]
-
-stock.BTC <- stockAdj
+stock.BTC <- get_stock_zoo('BTC-USD')
 summary(stock.BTC)
 ```
 
