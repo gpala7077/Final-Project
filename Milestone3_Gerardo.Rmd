@@ -174,33 +174,16 @@ cowplot::plot_grid(
 Figure 4 is the ACF plot for both Ethereum and NVIDIA. Auto-correlation has a strong presence in this time series. The ACF gradually decreases indicating a non-stationary series.
 
 ```{r data5a, include=T,echo=F,warning=F,fig.height=1.75,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
-conf.level <- 0.95
-ciline_eth <- qnorm((1 - conf.level)/2)/sqrt(length(df_eth))
-ciline_nvd <- qnorm((1 - conf.level)/2)/sqrt(length(df_nvd))
-
-nvd_acf <- acf((log(df_nvd)), na.action = na.pass,plot = FALSE)
-nvd_acf <- with(nvd_acf, data.frame(lag, acf))
-
-
-eth_acf <- acf((log(df_eth)), na.action = na.pass,plot = FALSE)
-eth_acf <- with(eth_acf, data.frame(lag, acf))
-
-eth <- ggplot(data = eth_acf, mapping = aes(x = lag, y = acf)) +
-       geom_hline(aes(yintercept = 0)) +
-       geom_segment(mapping = aes(xend = lag, yend = 0)) + 
-       ggtitle("Ethereum Log(Price) ACF") + 
-       geom_hline(aes(yintercept = ciline_eth),linetype = 3, color = 'darkblue') + 
-       geom_hline(aes(yintercept = -ciline_eth), linetype = 3, color = 'darkblue')
-
-nvd <- ggplot(data = nvd_acf, mapping = aes(x = lag, y = acf)) +
-       geom_hline(aes(yintercept = 0)) +
-       geom_segment(mapping = aes(xend = lag, yend = 0)) + ggtitle("NVIDIA Log(Price) ACF")+ 
-       geom_hline(aes(yintercept = ciline_nvd),linetype = 3, color = 'darkblue') + 
-       geom_hline(aes(yintercept = -ciline_nvd), linetype = 3, color = 'darkblue')
 
 cowplot::plot_grid(
-  eth, nvd
+  
+  autoplot(acf(log(df_eth),na.action=na.pass,plot=FALSE)) + 
+    ggtitle("Ethereum Log(Price) ACF"),
+  
+  autoplot(acf(log(df_nvd),na.action=na.pass,plot=FALSE)) + 
+    ggtitle("NVIDIA Log(Price) ACF")
 )
+
 
 ```
 
@@ -209,32 +192,13 @@ Figure 5 shows the PACF for both Ethereum and NVIDIA. Ethereum shows auto-correl
 
 ```{r data5b, include=T,echo=F,warning=F,fig.height=1.75,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
 
-nvd_pacf <- pacf(log(df_nvd), na.action = na.pass,plot=FALSE)
-
-nvd_pacf <- with(nvd_pacf, data.frame(lag, acf))
-
-
-eth_pacf <- pacf((log(df_eth)), na.action = na.pass,plot=FALSE)
-eth_pacf <- with(eth_pacf, data.frame(lag, acf))
-
-eth <- ggplot(data = eth_pacf, mapping = aes(x = lag, y = acf)) +
-       geom_hline(aes(yintercept = 0)) +
-       geom_segment(mapping = aes(xend = lag, yend = 0)) + 
-       ggtitle("Ethereum Log(Price) PACF") + 
-       geom_hline(aes(yintercept = ciline_eth),linetype = 3, color = 'darkblue') + 
-       geom_hline(aes(yintercept = -ciline_eth), linetype = 3, color = 'darkblue')
-
-
-nvd <- ggplot(data = nvd_pacf, mapping = aes(x = lag, y = acf)) +
-       geom_hline(aes(yintercept = 0)) +
-       geom_segment(mapping = aes(xend = lag, yend = 0)) + 
-       ggtitle("NVIDIA Log(Price) PACF") + 
-       geom_hline(aes(yintercept = ciline_eth),linetype = 3, color = 'darkblue') + 
-       geom_hline(aes(yintercept = -ciline_eth), linetype = 3, color = 'darkblue')
-
-
 cowplot::plot_grid(
-  eth, nvd
+  
+  autoplot(pacf(log(df_eth),na.action=na.pass,plot=FALSE)) + 
+    ggtitle("Ethereum Log(Price) ACF"),
+  
+  autoplot(pacf(log(df_nvd),na.action=na.pass,plot=FALSE)) + 
+    ggtitle("NVIDIA Log(Price) ACF")
 )
 ```
 
@@ -243,32 +207,13 @@ cowplot::plot_grid(
 Figure 5 shows the ACF for the log returns of both Ethereum and NVIDIA. Ethereum shows some minor auto-correlation, while NVIDIA shows evidence of seasonality and auto-correlation.
 
 ```{r data5c, include=T,echo=F,warning=F,fig.height=1.75,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
-conf.level <- 0.95
-ciline_eth <- qnorm((1 - conf.level)/2)/sqrt(length(df_eth))
-ciline_nvd <- qnorm((1 - conf.level)/2)/sqrt(length(df_nvd))
-
-nvd_acf <- acf((diff(log(df_nvd))), na.action = na.pass,plot = FALSE)
-nvd_acf <- with(nvd_acf, data.frame(lag, acf))
-
-
-eth_acf <- acf((diff(log(df_eth))), na.action = na.pass,plot = FALSE)
-eth_acf <- with(eth_acf, data.frame(lag, acf))
-
-eth <- ggplot(data = eth_acf, mapping = aes(x = lag, y = acf)) +
-       geom_hline(aes(yintercept = 0)) +
-       geom_segment(mapping = aes(xend = lag, yend = 0)) + 
-       ggtitle("Ethereum diff(Log(Price)) ACF") + 
-       geom_hline(aes(yintercept = ciline_eth),linetype = 3, color = 'darkblue') + 
-       geom_hline(aes(yintercept = -ciline_eth), linetype = 3, color = 'darkblue')
-
-nvd <- ggplot(data = nvd_acf, mapping = aes(x = lag, y = acf)) +
-       geom_hline(aes(yintercept = 0)) +
-       geom_segment(mapping = aes(xend = lag, yend = 0)) + ggtitle("NVIDIA diff(Log(Price)) ACF")+ 
-       geom_hline(aes(yintercept = ciline_nvd),linetype = 3, color = 'darkblue') + 
-       geom_hline(aes(yintercept = -ciline_nvd), linetype = 3, color = 'darkblue')
-
 cowplot::plot_grid(
-  eth, nvd
+  
+  autoplot(acf(diff(log(df_eth)),na.action=na.pass,plot=FALSE)) + 
+    ggtitle("Ethereum diff(log(Price)) ACF"),
+  
+  autoplot(acf(diff(log(df_nvd)),na.action=na.pass,plot=FALSE)) + 
+    ggtitle("NVIDIA diff(log(Price)) ACF")
 )
 
 ```
