@@ -104,47 +104,31 @@ get_stock_df <- function(ticker){
 ```
 
 The NVIDA series contains 1,257 observations and 4 features, date, symbol, volume and adjusted price. 
+Ethereum contains 1,826 observations with the same four features (date, symbol, volume, adj. price).
 
 ```{r exp1, include=T,echo=F,warning=FALSE}
 df_nvd <- get_stock_df('NVDA')
-summary(df_nvd)
-```
-Ethereum contains 1,826 observations with the same four features (date, symbol, volume, adj. price). As stated before, the reason Ethereum contains more observations than NVIDIA is because Ethereum is traded 24/7 while NVIDIA is subject to market hours, holidays, and weekends. 
-
-```{r exp2, include=T,echo=F,warning=FALSE}
 df_eth <- get_stock_df('ETH-USD')
-summary(df_eth)
 ```
+ 
+
 
 ## Distributions
-The distributions of the adjusted prices for two series are highly skewed right, more often the prices are lower than extremely high. Aside from the skewness, NVIDA has 4 different peaks in its distribution suggesting multiple means during different time periods compared to Ethereum which only has a single peak.
+The distributions of the adjusted prices for two series shown in Figure 1 are highly skewed right, more often the prices are lower than extremely high. Aside from the skewness, NVIDA has 4 different peaks in its distribution suggesting multiple means during different time periods compared to Ethereum which only has a single peak.
 
-```{r dis1, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+```{r dis1, include=T,echo=F,warning=FALSE,fig.height=1.75,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
 
-eth <- ggplot(data=df_eth,aes(x=adjusted)) + geom_histogram() + ggtitle('Ethereum\nDistribution of Adjusted Price')
+eth <- ggplot(data=df_eth,aes(x=adjusted)) + 
+  geom_histogram() + ggtitle('Ethereum\nDistribution of Adjusted Price')
 
-nvd <- ggplot(data=df_nvd,aes(x=adjusted)) + geom_histogram() + ggtitle('NVIDIA\nDistribution of Adjusted Price')
-
-cowplot::plot_grid(
-  eth,nvd
-)
-
-```
-
-In order to achieve a more normal distribution we can apply a log transformation on the series. As noted below, a log transformation reduces the skew. 
-```{r dis1, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
-
-eth <- ggplot(data=df_eth,aes(x=log(adjusted))) + geom_histogram() + ggtitle('Ethereum\nDistribution of Adjusted Price')
-
-nvd <- ggplot(data=df_nvd,aes(x=log(adjusted))) + geom_histogram() + ggtitle('NVIDIA\nDistribution of Adjusted Price')
+nvd <- ggplot(data=df_nvd,aes(x=adjusted)) + 
+  geom_histogram() + ggtitle('NVIDIA\nDistribution of Adjusted Price')
 
 cowplot::plot_grid(
   eth,nvd
 )
 
 ```
-
-
 
 ## Graphing the Time Series
 ```{r data1, include=T,echo=F,warning=FALSE}
@@ -153,65 +137,151 @@ df_nvd <- get_stock_zoo('NVDA')
 ```
 
 
-Figure 1 shows the time series for Ethereum and NVIDIA over the past 5 years. It appears to be a multiplicative, non-stationary time series with an exponential positive trend that has exploded most recently in 2021.
+Figure 2 shows the time series for Ethereum and NVIDIA over the past 5 years. It appears to be a multiplicative, non-stationary time series with an exponential positive trend that has exploded most recently in 2021. What is also apparent is that both series seem to follow a similar trend. There is a are two similar peaks that happen in the same time frame.
 
-```{r data2, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+```{r data2, include=T,echo=F,warning=FALSE,fig.height=1.75,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
 cowplot::plot_grid(
- autoplot(df_eth)+ggtitle('Ethereum'),autoplot(df_nvd)+ggtitle('NVIDIA') 
+ autoplot(df_eth)+ggtitle('Ethereum Price Timeseries'),autoplot(df_nvd)+ggtitle('NVIDIA Price TimeSeries') 
 )
 
 ```
-
-Figure 2, we can see the time series with a log transformation. It has transformed the exponential behavior into something more linear. There still remains a general increasing trend, and appears to be more additive. \newpage
-
-```{r data3, echo=T, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE, include=T}
-cowplot::plot_grid(
- autoplot(log(df_eth))+ggtitle('Ethereum'),autoplot(log(df_nvd))+ggtitle('NVIDIA') 
-)
-
-```
-
-Figure 3, we can see the log returns. The plot shows general white noise with a few outliers in 2017 and 2020.
-
-```{r data4, echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
-
-cowplot::plot_grid(
- autoplot(diff(log(df_eth)))+ggtitle('Ethereum'),autoplot(diff(log(df_nvd)))+ggtitle('NVIDIA') 
-)
-
-```
-
 \newpage
+Figure 3, we can see the time series with a log transformation. It has transformed the exponential behavior into something more linear. There still remains a general increasing trend, and appears to be more additive. Again, we can note that both series are very similar trends.
+
+```{r data3, include=T,echo=F,warning=FALSE,fig.height=1.75,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+ autoplot(log(df_eth))+ggtitle('Ethereum Price Timeseries'),autoplot(log(df_nvd))+ggtitle('NVIDIA Price TimeSeries') 
+)
+
+```
+
+Figure 4, we can see the log returns. The plot shows general white noise with a few outliers in 2017 and 2020.They both seem to have a mean that floats around zero, and have a similar range between .2 and -.2 (with the exception of an outlier in 2020 at -.4)
 
 
+```{r data4, echo=F, fig.align="center", fig.fullwidth=T, fig.height=1.75, warning=FALSE,fig.pos='htb!'}
 
-## Auto-correlation
+cowplot::plot_grid(
+ autoplot(diff(log(df_eth)))+ggtitle('Ethereum'),
+ autoplot(diff(log(df_nvd)))+ggtitle('NVIDIA') 
+)
+
+```
+
+# Auto-correlation
 
 ## ACF of the time series
 
-Figure 4 is the ACF plot. Auto-correlation has a strong presence in this time series. The ACF gradually decreases indicating a non-stationary series.
+Figure 4 is the ACF plot for both Ethereum and NVIDIA. Auto-correlation has a strong presence in this time series. The ACF gradually decreases indicating a non-stationary series.
 
-```{r data5, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+```{r data5a, include=T,echo=F,warning=F,fig.height=1.75,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+conf.level <- 0.95
+ciline_eth <- qnorm((1 - conf.level)/2)/sqrt(length(df_eth))
+ciline_nvd <- qnorm((1 - conf.level)/2)/sqrt(length(df_nvd))
 
-acf((df_eth), na.action = na.pass)
+nvd_acf <- acf((log(df_nvd)), na.action = na.pass,plot = FALSE)
+nvd_acf <- with(nvd_acf, data.frame(lag, acf))
+
+
+eth_acf <- acf((log(df_eth)), na.action = na.pass,plot = FALSE)
+eth_acf <- with(eth_acf, data.frame(lag, acf))
+
+eth <- ggplot(data = eth_acf, mapping = aes(x = lag, y = acf)) +
+       geom_hline(aes(yintercept = 0)) +
+       geom_segment(mapping = aes(xend = lag, yend = 0)) + 
+       ggtitle("Ethereum Log(Price) ACF") + 
+       geom_hline(aes(yintercept = ciline_eth),linetype = 3, color = 'darkblue') + 
+       geom_hline(aes(yintercept = -ciline_eth), linetype = 3, color = 'darkblue')
+
+nvd <- ggplot(data = nvd_acf, mapping = aes(x = lag, y = acf)) +
+       geom_hline(aes(yintercept = 0)) +
+       geom_segment(mapping = aes(xend = lag, yend = 0)) + ggtitle("NVIDIA Log(Price) ACF")+ 
+       geom_hline(aes(yintercept = ciline_nvd),linetype = 3, color = 'darkblue') + 
+       geom_hline(aes(yintercept = -ciline_nvd), linetype = 3, color = 'darkblue')
+
+cowplot::plot_grid(
+  eth, nvd
+)
+
 ```
 
-# ACF of the Log Returns
+## PACF of the time series
+Figure 5 shows the PACF for both Ethereum and NVIDIA. Ethereum shows auto-correlation with an extreme value at lag 19, while NVIDIA shows no evidence of partial auto-correlation.
 
-```{r data6, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+```{r data5b, include=T,echo=F,warning=F,fig.height=1.75,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
 
-acf(diff(log(data)), na.action = na.pass)
+nvd_pacf <- pacf(log(df_nvd), na.action = na.pass,plot=FALSE)
+
+nvd_pacf <- with(nvd_pacf, data.frame(lag, acf))
+
+
+eth_pacf <- pacf((log(df_eth)), na.action = na.pass,plot=FALSE)
+eth_pacf <- with(eth_pacf, data.frame(lag, acf))
+
+eth <- ggplot(data = eth_pacf, mapping = aes(x = lag, y = acf)) +
+       geom_hline(aes(yintercept = 0)) +
+       geom_segment(mapping = aes(xend = lag, yend = 0)) + 
+       ggtitle("Ethereum Log(Price) PACF") + 
+       geom_hline(aes(yintercept = ciline_eth),linetype = 3, color = 'darkblue') + 
+       geom_hline(aes(yintercept = -ciline_eth), linetype = 3, color = 'darkblue')
+
+
+nvd <- ggplot(data = nvd_pacf, mapping = aes(x = lag, y = acf)) +
+       geom_hline(aes(yintercept = 0)) +
+       geom_segment(mapping = aes(xend = lag, yend = 0)) + 
+       ggtitle("NVIDIA Log(Price) PACF") + 
+       geom_hline(aes(yintercept = ciline_eth),linetype = 3, color = 'darkblue') + 
+       geom_hline(aes(yintercept = -ciline_eth), linetype = 3, color = 'darkblue')
+
+
+cowplot::plot_grid(
+  eth, nvd
+)
+```
+
+
+## ACF of the Log Returns
+Figure 5 shows the ACF for the log returns of both Ethereum and NVIDIA. Ethereum shows some minor auto-correlation, while NVIDIA shows evidence of seasonality and auto-correlation.
+
+```{r data5c, include=T,echo=F,warning=F,fig.height=1.75,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+conf.level <- 0.95
+ciline_eth <- qnorm((1 - conf.level)/2)/sqrt(length(df_eth))
+ciline_nvd <- qnorm((1 - conf.level)/2)/sqrt(length(df_nvd))
+
+nvd_acf <- acf((diff(log(df_nvd))), na.action = na.pass,plot = FALSE)
+nvd_acf <- with(nvd_acf, data.frame(lag, acf))
+
+
+eth_acf <- acf((diff(log(df_eth))), na.action = na.pass,plot = FALSE)
+eth_acf <- with(eth_acf, data.frame(lag, acf))
+
+eth <- ggplot(data = eth_acf, mapping = aes(x = lag, y = acf)) +
+       geom_hline(aes(yintercept = 0)) +
+       geom_segment(mapping = aes(xend = lag, yend = 0)) + 
+       ggtitle("Ethereum diff(Log(Price)) ACF") + 
+       geom_hline(aes(yintercept = ciline_eth),linetype = 3, color = 'darkblue') + 
+       geom_hline(aes(yintercept = -ciline_eth), linetype = 3, color = 'darkblue')
+
+nvd <- ggplot(data = nvd_acf, mapping = aes(x = lag, y = acf)) +
+       geom_hline(aes(yintercept = 0)) +
+       geom_segment(mapping = aes(xend = lag, yend = 0)) + ggtitle("NVIDIA diff(Log(Price)) ACF")+ 
+       geom_hline(aes(yintercept = ciline_nvd),linetype = 3, color = 'darkblue') + 
+       geom_hline(aes(yintercept = -ciline_nvd), linetype = 3, color = 'darkblue')
+
+cowplot::plot_grid(
+  eth, nvd
+)
+
 ```
 
 \newpage
-
 ## Ljung Box Test
 
 This can be further confirmed by performing the Ljung Box test. At lag 1, the Ljung-Box p-value is close to zero. This indicates that at the 99% confidence, the null hypothesis is rejected and one can conclude that the series is not independently distributed and exhibit serial correlation.
 
-```{r data7, include=T,echo=T,warning=F}
+```{r data7, include=T,echo=F,warning=F}
 
-Box.test(log(data), lag = 1, type = "Ljung-Box")
+Box.test(log(df_nvd), lag = 1, type = "Ljung-Box")
+Box.test(log(df_eth), lag = 1, type = "Ljung-Box")
+
 ```
 
-``
