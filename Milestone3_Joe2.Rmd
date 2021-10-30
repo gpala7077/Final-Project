@@ -1,0 +1,232 @@
+---
+title             : "Final Project: Milestone 3"
+shorttitle        : "Milestone 3"
+author: 
+  - name          : "Joe Paszkiewicz"
+    affiliation   : "1,2"
+affiliation:
+  - id            : "1"
+    institution   : "DSC 425 - Time Series Analysis and Forecasting"
+  - id            : "2"
+    institution   : "DePaul University"
+floatsintext      : yes
+figsintext        : yes
+figurelist        : yes
+tablelist         : yes
+footnotelist      : no
+linenumbers       : no
+mask              : no
+draft             : no
+documentclass     : "apa6"
+classoption       : "man"
+output            :  papaja::apa6_pdf
+fontsize          : 11pt
+header-includes:
+  - \usepackage{setspace}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \usepackage{xcolor}
+  - \usepackage[backend=biber]{biblatex}
+  - \addbibresource{r-references.bib}
+  - \usepackage{afterpage}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+editor_options: 
+  chunk_output_type: console
+---
+
+\singlespacing
+
+```{r setup, include = FALSE,echo=FALSE}
+#library("papaja")
+library(lubridate)
+library(tidyquant)
+library(zoo)
+library(knitr)
+#library(kableExtra)
+library(xtable)
+library(ggfortify)
+```
+
+# Crypto-Currency and Stock Data - Ethereum and NVIDIA
+
+As a group we are looking at a set of 7 stocks and crypto-currencies, with the focus of finding any relationships between them. My individual contribution will be to look at a stock and crypto-currency set, Ethereum and NVIDIA. NVIDIA is a technology company that manufacture high-end GPU's. A majority of their revenues are spearheaded through GPU card sales which are subsequently used for crypto-mining. This suggests there may be a relationship between the two series. 
+
+
+The following data is retrieved using a Yahoo API in R named tidyquant. Retrieving the daily adjusted stock prices for NVIDIA and Ethereum between 10-01-2016 to 09-30-2021. The biggest difference between the two series is the number of instances. Since NvIDIA is a stock, it is subject to the market closing on weekends, holidays, and business hours, whereas a crypto-currency is actively traded 24/7. This means that there will be more instances for Ethereum than NVIDIA within the same time-frame.
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+start_date = '2016-10-01'
+end_date = '2021-09-30'
+tickers = c('SPY','AMD','NVDA','BTC-USD','ETH-USD','LINK-USD','COIN','ADA-USD')
+
+# Read csv file if exists
+if(file.exists('tickers.csv')){
+  stocks = read.csv('tickers.csv')
+  stocks$date = ymd(stocks$date)
+} else{ # Download and write if csv does not exist
+  stocks = tq_get(tickers,
+                  from=start_date,
+                  to=end_date
+                  )[,c('date','symbol','volume','adjusted')]
+  stocks$date = ymd(stocks$date)
+  write.csv(stocks,'tickers.csv', row.names = F)
+}
+
+# A function that will return only one stock as zoo object
+get_stock_zoo <- function(ticker){
+    selected_stock = stocks[stocks$symbol==ticker,]
+    adjusted.price = zoo(
+      selected_stock$adjusted,
+      order.by = selected_stock$date
+      )
+    return(adjusted.price)
+}
+
+get_stock_df <- function(ticker){
+    selected_stock = stocks[stocks$symbol==ticker,]
+    return(selected_stock)
+}
+
+```
+
+The NVIDA series contains 1,257 observations and 4 features, date, symbol, volume and adjusted price. 
+
+```{r exp1, include=T,echo=F,warning=FALSE}
+df_btc <- get_stock_df('BTC-USD')
+summary(df_btc)
+```
+Ethereum contains 1,826 observations with the same four features (date, symbol, volume, adj. price). As stated before, the reason Ethereum contains more observations than NVIDIA is because Ethereum is traded 24/7 while NVIDIA is subject to market hours, holidays, and weekends. 
+
+```{r exp2, include=T,echo=F,warning=FALSE}
+df_link <- get_stock_df('LINK-USD')
+summary(df_link)
+```
+
+## Distributions
+The distributions of the adjusted prices for two series are highly skewed right, more often the prices are lower than extremely high. Aside from the skewness, NVIDA has 4 different peaks in its distribution suggesting multiple means during different time periods compared to Ethereum which only has a single peak.
+
+```{r dis1, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+btc <- ggplot(data=df_btc,aes(x=adjusted)) + geom_histogram() + ggtitle('Bitcoin\nDistribution of Adjusted Price')
+
+link <- ggplot(data=df_link,aes(x=adjusted)) + geom_histogram() + ggtitle('Chainlink\nDistribution of Adjusted Price')
+
+cowplot::plot_grid(
+  btc,link
+)
+
+```
+
+In order to achieve a more normal distribution we can apply a log transformation on the series. As noted below, a log transformation reduces the skew. 
+```{r dis1, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+btc <- ggplot(data=df_btc,aes(x=log(adjusted))) + geom_histogram() + ggtitle('Bitcoin\nDistribution of Adjusted Price')
+
+link <- ggplot(data=df_link,aes(x=log(adjusted))) + geom_histogram() + ggtitle('Chainlink\nDistribution of Adjusted Price')
+
+cowplot::plot_grid(
+  btc,link
+)
+
+```
+
+
+
+## Graphing the Time Series
+```{r data1, include=T,echo=F,warning=FALSE}
+df_btc <- get_stock_zoo('BTC-USD')
+df_link <- get_stock_zoo('LINK-USD')
+```
+
+
+Figure 1 shows the time series for Ethereum and NVIDIA over the past 5 years. It appears to be a multiplicative, non-stationary time series with an exponential positive trend that has exploded most recently in 2021.
+
+```{r data2, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+cowplot::plot_grid(
+ autoplot(df_btc)+ggtitle('Bitcoin'),autoplot(df_link)+ggtitle('Chainlink') 
+)
+
+```
+
+Figure 2, we can see the time series with a log transformation. It has transformed the exponential behavior into something more linear. There still remains a general increasing trend, and appears to be more additive. \newpage
+
+```{r data3, echo=T, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE, include=T}
+cowplot::plot_grid(
+ autoplot(log(df_btc))+ggtitle('Bitcoin'),autoplot(log(df_link))+ggtitle('Chainlink') 
+)
+
+```
+
+Figure 3, we can see the log returns. The plot shows general white noise with a few outliers in 2017 and 2020.
+
+```{r data4, echo=TRUE, fig.align="center", fig.fullwidth=T, fig.height=3.75, warning=FALSE}
+
+cowplot::plot_grid(
+ autoplot(diff(log(df_eth)))+ggtitle('Ethereum'),autoplot(diff(log(df_nvd)))+ggtitle('NVIDIA') 
+)
+
+```
+
+\newpage
+
+
+
+## Auto-correlation
+
+## ACF of the time series
+
+Figure 4 is the ACF plot. Auto-correlation has a strong presence in this time series. The ACF gradually decreases indicating a non-stationary series.
+
+```{r data5, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+acf((df_btc), na.action = na.pass)
+acf((df_link), na.action = na.pass)
+```
+
+```{r data5a, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+pacf((df_btc), na.action = na.pass)
+pacf((df_link), na.action = na.pass)
+```
+
+# ACF of the Log Returns
+
+```{r data6, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+acf(diff(log(data)), na.action = na.pass)
+```
+
+\newpage
+
+## Ljung Box Test
+
+This can be further confirmed by performing the Ljung Box test. At lag 1, the Ljung-Box p-value is close to zero. This indicates that at the 99% confidence, the null hypothesis is rejected and one can conclude that the series is not independently distributed and exhibit serial correlation.
+
+```{r data7, include=T,echo=T,warning=F}
+
+Box.test(log(data), lag = 1, type = "Ljung-Box")
+```
+
+## Auto ARIMA of the time series
+
+```{r data8, include=T,echo=T,warning=F,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
+
+library(forecast)
+auto.arima(df_btc)
+auto.arima(df_link)
+```
+``

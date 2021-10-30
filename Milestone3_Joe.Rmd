@@ -1,6 +1,6 @@
 ---
-title             : "Final Project: Milestone 2"
-shorttitle        : "Milestone 2"
+title             : "Final Project: Milestone 3"
+shorttitle        : "Milestone 3"
 author: 
   - name          : "Mourad Askar, Gerardo Palacios, Joe Paszkiewicz, Evelina Ramoskaite "
     affiliation   : "1,2"
@@ -49,14 +49,16 @@ editor_options:
 \singlespacing
 
 ```{r setup, include = FALSE,echo=FALSE}
-library("papaja")
+#library("papaja")
 library(lubridate)
 library(tidyquant)
 library(zoo)
 library(knitr)
-library(kableExtra)
+#library(kableExtra)
 library(xtable)
-library(ggforify)
+library(ggfortify)
+library(cowplot)
+
 ```
 
 # Crypto-Currency and Stock Data
@@ -90,18 +92,22 @@ get_stock_zoo <- function(ticker){
 }
 ```
 
-```{r, include=T,echo=F,warning=FALSE}
-data <- get_stock_zoo('ETH-USD')
-summary(data)
+```{r data1, include=T,echo=F,warning=FALSE}
+btc <- get_stock_zoo('BTC-USD')
+link <- get_stock_zoo('LINK-USD')
+summary(btc)
 ```
 
 ## Graphing the Time Series
 
-Figure 1 shows the time series for Ethereum over the past 5 years. It appears to be a multiplicative, non-stationary time series with an exponential positive trend that has exploded most recently in 2021.
+Figure 1 shows the time series for Bitcoin over the past 5 years. It appears to be a multiplicative, non-stationary time series with an exponential positive trend that has exploded most recently in 2021.
 
-```{r data2, include=T,echo=T,warning=FALSE,fig.height=3.75,fig.fullwidth=T,fig.align="center"}
-autoplot(data)
+```{r data2, include=T,echo=T,warning=FALSE}
+autoplot(data2)
 
+cowplot::plot_grid(
+  autoplot(btc)+ggtitle("bitcoin"),autoplot(link)
+)
 ```
 
 Figure 2, we can see the time series with a log transformation. It has transformed the exponential behavior into something more linear. There still remains a general increasing trend, and appears to be more additive. \newpage
