@@ -1,0 +1,391 @@
+---
+title             : "Final Project: Milestone 5"
+shorttitle        : "Milestone 5"
+author: 
+  - name          : "Gerardo Palacios"
+    affiliation   : "1,2"
+affiliation:
+  - id            : "1"
+    institution   : "DSC 425 - Time Series Analysis and Forecasting"
+  - id            : "2"
+    institution   : "DePaul University"
+floatsintext      : yes
+figsintext        : yes
+figurelist        : yes
+tablelist         : yes
+footnotelist      : no
+linenumbers       : no
+mask              : no
+draft             : no
+documentclass     : "apa6"
+classoption       : "man"
+output            :  papaja::apa6_pdf
+fontsize          : 11pt
+header-includes:
+  - \usepackage{setspace}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \usepackage{xcolor}
+  - \usepackage[backend=biber]{biblatex}
+  - \addbibresource{r-references.bib}
+  - \usepackage{afterpage}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+editor_options: 
+  chunk_output_type: console
+---
+
+\singlespacing
+
+```{r setup, include = FALSE,echo=FALSE}
+library("papaja")
+library(knitr)
+library(kableExtra)
+library(xtable)
+library(zoo)
+library(lubridate)
+library(ggfortify)
+library(forecast)
+library(lmtest)
+library(fBasics)
+library(tseries)
+library(astsa)
+library(dynlm)
+library(fGarch)
+library(tidyr)
+library(ggplot2)
+source("eacf.R")
+source("backtest.R")
+library(tidyquant)
+```
+
+# Crypto-Currency and Stock Data - Bitcoin and NVIDIA
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+start_date = '2016-10-01'
+end_date = '2021-09-30' # '2021-09-30'
+tickers = c('SPY','AMD','NVDA','BTC-USD','ETH-USD','LINK-USD','COIN','ADA-USD')
+
+# Read csv file if exists
+if(file.exists('tickers.csv')){
+  stocks = read.csv('tickers.csv')
+  stocks$date = ymd(stocks$date)
+} else{ # Download and write if csv does not exist
+  stocks = tq_get(tickers,
+                  from=start_date,
+                  to=end_date
+                  )[,c('date','symbol','volume','adjusted')]
+  stocks$date = ymd(stocks$date)
+  write.csv(stocks,'tickers.csv', row.names = F)
+}
+
+# A function that will return only one stock as zoo object
+get_stock_zoo <- function(ticker){
+    selected_stock = stocks[stocks$symbol==ticker,]
+    adjusted.price = zoo(
+      selected_stock$adjusted,
+      order.by = selected_stock$date
+      )
+    return(adjusted.price)
+}
+
+get_stock_df <- function(ticker){
+    selected_stock = stocks[stocks$symbol==ticker,]
+    return(selected_stock)
+}
+
+drop_non_matching_days <- function(ts_data, ts_reference){
+  z <- cbind(ts_reference, ts_data)
+  z <- z[!is.na(z[,1]),]
+
+  return(z[,2])
+}
+```
+
+
+## Individual Contribution
+
+```{r data1, include=T,echo=F,warning=FALSE}
+df_btc <- get_stock_zoo('BTC-USD')
+df_nvd <- get_stock_zoo('NVDA')
+df_amd <- get_stock_zoo('AMD')
+
+trim_btc = na.omit(drop_non_matching_days(df_btc,df_nvd))
+trim_nvd = drop_non_matching_days(df_nvd,trim_btc)
+# Split train and test data
+n = length(trim_btc)
+d = 10 # Test/Prediction holdout
+print(n)
+
+trim_btc.train <- trim_btc[1:(n-d)]
+trim_btc.test <- trim_btc[(n-d+1):n]
+df_nvd.train <- df_nvd[1:(n-d)]
+df_nvd.test <- df_nvd[(n-d+1):n]
+df_amd.train <- df_amd[1:(n-d)]
+df_amd.test <- df_amd[(n-d+1):n]
+
+
+trim_btc_lr.train <- diff(log(trim_btc.train))
+trim_btc_lr.test <- diff(log(trim_btc.test))
+df_nvd_lr.train <- diff(log(df_nvd.train))
+df_nvd_lr.test <- diff(log(df_nvd.test))
+df_amd_lr.train <- diff(log(df_amd.train))
+df_amd_lr.test <- diff(log(df_amd.test))
+
+```
+
+For my individual contribution towards the team I will be looking into potential relationships between Bitcoin and a Bitcoin mining stock, NVIDIA. As shown in Figure \@ref(fig:data2)) the time series for Bitcoin and NVIDIA over the past 5 years. It appears to be a multiplicative, non-stationary time series with an exponential positive trend that has exploded most recently in 2021. What is also apparent is that both series seem to follow a similar trend. There is a are two similar peaks that happen in the same time frame. However, NVIDIA shows to be much less volatile than Bitcoin. Due to is multipicative nature, performing a log and showing the log returns can also be seen. Performing a log transformation allowed the series to be more additive but still remains to be non-stationary. In order to build a model, a stationary series is best. In that case, the log returns appear to be stationary and will be used for modeling.
+
+
+```{r data2, include=T,echo=F,warning=FALSE,fig.height=3,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+ autoplot(df_btc)+ggtitle('BTC Price Timeseries'),
+ autoplot(df_nvd)+ggtitle('NVIDIA Price TimeSeries'),
+ autoplot(log(df_btc))+ggtitle('Log BTC Price Timeseries'),
+ autoplot(log(df_nvd))+ggtitle('Log NVIDIA Price TimeSeries'),
+ autoplot(diff(log(trim_btc)))+ggtitle('Log returns BTC Price Timeseries'),
+ autoplot(diff(log(df_nvd)))+ggtitle('Log returns NVIDIA Price TimeSeries')
+)
+
+```
+
+# Auto-correlation
+
+## ACF/PACF/EACF
+
+Figure \@ref(fig:data3)) is the ACF plot of the log returns for both Bitcoin and NVIDIA . Auto-correlation is weak but present in this time series. Bitcoin appears to have some auto-correlation at lag 10 while Nvidia shows an alternating acf every lag with a significant serial correlation at lag 22. It appears to show so AR behavior.The PACF appears very similar to the ACF, with nearly identical serial correlation at each lag. Both are showing evidence of AR behavior.
+
+```{r data3, include=T,echo=F,warning=F,fig.height=3,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+
+cowplot::plot_grid(
+  
+  autoplot(Acf(diff(log(df_btc)),na.action=na.pass,plot=FALSE)) + 
+    ggtitle("Bitcoin Diff(Log(Price)) ACF"),
+  
+  autoplot(Acf(diff(log(df_nvd)),na.action=na.pass,plot=FALSE)) + 
+    ggtitle("NVIDIA Diff(Log(Price)) ACF"),
+
+  autoplot(pacf(diff(log(df_btc)),na.action=na.pass,plot=FALSE)) + 
+    ggtitle("Bitcoin DIff(Log(Price)) PACF"),
+  
+  autoplot(pacf(diff(log(df_nvd)),na.action=na.pass,plot=FALSE)) + 
+    ggtitle("NVIDIA Diff(Log(Price)) PACF")
+
+)
+
+
+```
+\newpage
+The EACF of Bitcoin suggest that their is some seasonality at lag 9. In addition, it appears to be an MA1 or AR1. On the other hand, the EACF of Nvidia has a more complex pattern suggesting an AR1|MA2 behavior.
+
+
+```{r data4, include=T,echo=F,warning=F,out.width = "150%",fig.align="center",fig.pos='htb!'}
+
+include_graphics("EACF.png")
+
+```
+
+The ACF of the log returns squared and absolute value both show evidence of serial correlation.
+
+```{r data4b, include=T,echo=F,warning=F,fig.height=3,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+
+
+cowplot::plot_grid(
+  autoplot(Acf(diff(log(df_btc))^2,plot = F,na.action=na.pass)) + ggtitle('ACF of Bitcoin Squared'),
+  autoplot(Acf(abs(diff(log(df_btc))),plot = F,na.action=na.pass)) + ggtitle('ACF of Bitcoin Absolute Value'),
+  autoplot(Acf(diff(log(df_nvd))^2,plot = F,na.action=na.pass)) + ggtitle('ACF of NVIDIA Returns Squared'),
+  autoplot(Acf(abs(diff(log(df_nvd))),plot = F,na.action=na.pass)) + ggtitle('ACF of NVIDIA Returns Absolute Value')
+
+)
+```
+
+
+## Correlations between Bitcoin and NVIDIA
+The correlation between the two series is actually really high, with a value of .83. However, this correlation is rendered meaningless since the two series are non-stationary. When looking at the log returns the correlation is much lower at .16.
+
+```{r data4c, include=T,echo=F,warning=F}
+
+cor(trim_btc,trim_nvd)
+cor(diff(log(trim_btc)),diff(log(trim_nvd)))
+
+```
+
+Figure \@ref(fig:data5) looks further into the series and looks at the serial correlation in between diferent lags. As shown below, the higest correlation is at lag-0. Even if useful in modeling it would not be useful in practice because knowing the value of the stock will also come with knowing the value of bitcoin. There would need to be some sort of lag in order to truly exploit it.
+
+
+```{r data5, include=T,echo=F,warning=F,fig.height=3.25,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+
+ccf(diff(log(trim_btc)),diff(log(df_nvd)),na.action=na.pass )
+
+```
+
+
+## Modeling
+
+Multiple models were created in order to model bitcoin. The different iterations included modeling bitcoin by itself, regressing on time, adding AR|MA terms and regressing on NVIDIA and AMD.Unfortunately none of the models yielded promisining results. The analysis into the serial correlation suggested random walk models of order (0,0,0), furthermore, it also confirmed via auto arima using bic and aic that the best model was a random walk model of order (0,0,0). 
+
+The residuals of the each of the models were very similar, showing some spurious serial correaltion in the residuals as well as one obvious outlier. The residuals are moderately poor. The coefficients in each of the models are also insignificant.
+
+
+```{r data6, include=F,echo=F,warning=F}
+
+model0 = Arima(trim_btc_lr.train,order = c(0,0,0))
+summary(model0)
+coeftest(model0)
+
+```
+
+```{r data7, include=F,echo=F,warning=F}
+
+model1 = Arima(ts(trim_btc_lr.train),xreg = ts(df_nvd_lr.train),order = c(1,0,0))
+summary(model1)
+coeftest(model1)
+```
+
+```{r data8, include=F,echo=F,warning=F}
+
+model2 = Arima(ts(trim_btc_lr.train),xreg = ts(df_nvd_lr.train),order = c(1,0,1))
+summary(model2)
+coeftest(model2)
+
+
+```
+
+```{r data9, include=F,echo=F,warning=F}
+
+model3 = auto.arima(ts(trim_btc_lr.train),xreg = ts(df_nvd_lr.train))
+summary(model3)
+coeftest(model3)
+
+
+```
+
+```{r data10, include=F,echo=F,warning=F}
+
+model4 = auto.arima(ts(trim_btc_lr.train),xreg = ts(df_nvd_lr.train),ic='bic')
+summary(model4)
+coeftest(model4)
+```
+
+```{r data10a, include=F,echo=F,warning=F}
+
+model5 = auto.arima(ts(trim_btc_lr.train),xreg = cbind(time(trim_btc_lr.train),ts(df_nvd_lr.train),ts(df_amd_lr.train)),ic='bic')
+summary(model5)
+coeftest(model5)
+```
+
+```{r data11, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+
+cowplot::plot_grid(
+  autoplot(Acf(model0$residuals)),
+  autoplot(model0$residuals)
+)
+```
+
+
+```{r data12, include=T,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+  autoplot(Acf(model1$residuals, plot = F)),
+  autoplot(model1$residuals)
+)
+```
+
+```{r data13, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+  autoplot(Acf(model2$residuals)),
+  autoplot(model2$residuals)
+)
+```
+
+```{r data14, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+  autoplot(Acf(model3$residuals)),
+  autoplot(model3$residuals)
+)
+```
+
+```{r data15, include=T,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+
+autoplot(Acf(model4$residuals,plot = F)),
+autoplot(model4$residuals)
+)
+```
+
+
+```{r data15a, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+
+autoplot(Acf(model5$residuals)),
+autoplot(model5$residuals)
+)
+```
+
+The backtests are very similar in value, none of the models created appeared to be better than the other, including the auto arima models.
+
+```{r data15b, include=T,echo=F,warning=F,out.width = "100%",fig.align="center",fig.pos='htb!'}
+
+include_graphics("Backtests.png")
+
+```
+
+## Forecasting
+
+The forecasts for all the models are also very similar, none of the forecasts were able to accurately predict the holdout series. As shown below, the forecasts were the mean of the series and did not capture any of the actual movements in the series. 
+
+```{r data17, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+
+fc = forecast(model0,h=10)
+plot(fc,xlim=c(18750,19000))
+lines((n-d+2):n-2, as.numeric(trim_btc_lr.test), col="red", type="l")
+
+```
+
+
+```{r data18, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+
+fc = forecast(model1,xreg = df_nvd_lr.test,h=10)
+plot(fc,xlim=c(1200,1260))
+lines((n-d+2):n-2, as.numeric(trim_btc_lr.test), col="red", type="l")
+
+```
+
+```{r data19, include=T,echo=F,warning=F,fig.height=4,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+
+fc = forecast(model2,xreg = df_nvd_lr.test,h=10)
+plot(fc,xlim=c(1200,1260))
+lines((n-d+2):n-2, as.numeric(trim_btc_lr.test), col="red", type="l")
+
+```
+
+```{r data20, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+
+fc = forecast(model3,xreg = df_nvd_lr.test,h=10)
+plot(fc,xlim=c(1200,1260))
+lines((n-d+2):n-2, as.numeric(trim_btc_lr.test), col="red", type="l")
+
+```
+
+```{r data21, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+
+fc = forecast(model4,xreg = df_nvd_lr.test)
+plot(fc,xlim=c(1200,1260))
+lines((n-d+2):n-2, as.numeric(trim_btc_lr.test), col="red", type="l")
+
+```
+
+## Future steps
+
+Future steps will be to look if there are any garch effects and attempt to model the volatility of bitcoin by creating a arma-garch model.
