@@ -1,6 +1,6 @@
 ---
-title             : "Final Project: Milestone 5"
-shorttitle        : "Milestone 5"
+title             : "Final Project: Student Report"
+shorttitle        : "Appendix"
 author: 
   - name          : "Gerardo Palacios"
     affiliation   : "1,2"
@@ -115,7 +115,21 @@ drop_non_matching_days <- function(ts_data, ts_reference){
 ```
 
 
-## Individual Contribution
+## Student Report
+
+Throughout the quarter I have been regularly meeting with the team to discuss different avenues of approach, sharing troubleshooting tips, and exploring Bitcoin series with NVIDIA stock. I set up the github repository where we maintained our code and data together. Although initially I was analyzing ethereum we quickly finalized our focus towards Bitcoin instead. Once switching from ethereum to bitcoin, the first trouble that came into play was making sure there were matching series. Since bitcoin is not an actively traded stock on the exchange market, it does not have closing hours. Therefore, crypto-currency can be traded 365 days 24/7. This resulted in an unmatched length series between bitcoin and NVIDIA. In order to work around this, the time series were binded and removed of non-matching daily values.At this point, the series was able to be analyzed together. I conducted ACF/PACF/EACF Analysis of the bitcoin series and they appeared to be inconclusive ARMA behavior and only seemed to point towards a random walk model. Regardless, I attempted multiple models on bitcoin  with varying ARMA degrees, but non achieved a significant coefficients or a better AIC/BIC than a random walk model (0,0,0). The residuals appeared to be white noise and the forecasts only reflected the mean of the series.
+
+Next, I focused on nvidia and bitcoin. When looking at their cross-correlation of their values, the cross-correlations are very high, however, in order to model the series, the log returns were used in order to have weak stationarity. When looking at the cross-correlations of the log-returns there was not significant cross-correlations between them, the highest being at lag-0. Although, it may be correlated, in practice it would not be practical as that would be real-time data. Regardless, I still attempted multiple models regressing nvidia on bitcoin. Unfortunately, the models that were built did not perform very well, did not yield significant coefficients, and could also only forecast the mean. The residuals of the arma models did not have any arma behaviors and appeared to be white noise. This was further confirmed my conducting a Ljung-box test. 
+
+Finally, after failed arma models, I ran two iterations of garch models, one regressing nvidia on bitcoin and then using the residuals to build a garch, and the by building garch by only using the random walk model of the bitcoin log returns. All the residuals appear to be white noise. As later shown throughout this report, the residuals all appear to be without serial correlation, (but does include some spurious correlation), however the forecasts do not seem useful at all as they could only forecast the mean of the series.
+
+# Conclusion
+
+All the models that were attempted kept pointing towards one point, a random walk model is the best that can be fitted for the Bitcoin series. There was also no spurious correlation truly achieved between NVIDIA and Bitcoin that was exploitable. The highest correlation was at lag-0 but in practice it is not useful. It appears that Bitcoin is a random walk series without any drift. The forecasting between all the models were also very poor, None were able to truly capture the movements of the series and each model would only forecast the mean of the series. Although the residuals appear to fit model by only showing signs of spurious correlation, in practice the models do not achieve any forecasting power over bitcoin.
+
+
+# Takeaways
+I have three main takeaways from the time series class. The first is how auto-correlation can be exploited to make sense of past values and past movements/shocks. It was interesting to understand the unique characteristics of a time series in comparison to other data sets from other courses at DePaul. Part of the analysis truly comes from visual practice and knowing what to look for when it comes to the graphs that were generated in the course. One of the biggest headaches initially was trying to interpret the type of series it is, such as a multiplicative or additive series and to determine whether or not the series was stationary and if not, how to achieve weak stationarity.  Another takeaway, which may seem menial, but was the different method to train and test models. While in previous courses we are used to splitting it by 80/20 randomized split, but with a time series one cannot do so because the order of the series is integral to modeling it. Lastly, was learning about the different types of regression there are, it is such an expansion of pure linear regression as taught by earlier classes. This class has given me additional tools to explore and build models with. In fact, part of my previous internship dealt with time series models but I was not trained or had even known about ARIMA models, looking back now, there are many things I could do now to better understand the data. Overall, this has become one of my favorite classes because of how applicable this knowledge is since timeseries data is everywhere. Overall in the project, I learned a lot. I made a lot of bad mistakes such as initially modeling the values of the series instead of the log returns of the series, including a lot of troubleshooting headaches but regardless was always able to push through. Working with the team was also incredibly useful because I came to learn a lot from the discussions that would we would have during our weekly meetings. 
 
 ```{r data1, include=T,echo=F,warning=FALSE}
 df_btc <- get_stock_zoo('BTC-USD')
@@ -146,6 +160,8 @@ df_amd_lr.test <- diff(log(df_amd.test))
 
 ```
 
+# Appendix
+## Exploratory
 For my individual contribution towards the team I will be looking into potential relationships between Bitcoin and a Bitcoin mining stock, NVIDIA. As shown in Figure \@ref(fig:data2)) the time series for Bitcoin and NVIDIA over the past 5 years. It appears to be a multiplicative, non-stationary time series with an exponential positive trend that has exploded most recently in 2021. What is also apparent is that both series seem to follow a similar trend. There is a are two similar peaks that happen in the same time frame. However, NVIDIA shows to be much less volatile than Bitcoin. Due to is multipicative nature, performing a log and showing the log returns can also be seen. Performing a log transformation allowed the series to be more additive but still remains to be non-stationary. In order to build a model, a stationary series is best. In that case, the log returns appear to be stationary and will be used for modeling.
 
 
@@ -232,14 +248,14 @@ ccf(diff(log(trim_btc)),diff(log(df_nvd)),na.action=na.pass )
 ```
 
 
-## Modeling
+# Modeling
 
 Multiple models were created in order to model bitcoin. The different iterations included modeling bitcoin by itself, regressing on time, adding AR|MA terms and regressing on NVIDIA and AMD.Unfortunately none of the models yielded promisining results. The analysis into the serial correlation suggested random walk models of order (0,0,0), furthermore, it also confirmed via auto arima using bic and aic that the best model was a random walk model of order (0,0,0). 
 
 The residuals of the each of the models were very similar, showing some spurious serial correaltion in the residuals as well as one obvious outlier. The residuals are moderately poor. The coefficients in each of the models are also insignificant.
 
 
-```{r data6, include=F,echo=F,warning=F}
+```{r data6, include=T,echo=F,warning=F}
 
 model0 = Arima(trim_btc_lr.train,order = c(0,0,0))
 summary(model0)
@@ -247,7 +263,7 @@ coeftest(model0)
 
 ```
 
-```{r data7, include=F,echo=F,warning=F}
+```{r data7, include=T,echo=F,warning=F}
 
 model1 = Arima(ts(trim_btc_lr.train),xreg = ts(df_nvd_lr.train),order = c(1,0,0))
 summary(model1)
@@ -287,6 +303,7 @@ coeftest(model5)
 ```
 
 ```{r data11, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+Box.test(model0$residuals,type = 'Ljung-Box')
 
 cowplot::plot_grid(
   autoplot(Acf(model0$residuals)),
@@ -296,6 +313,8 @@ cowplot::plot_grid(
 
 
 ```{r data12, include=T,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+Box.test(model1$residuals,type = 'Ljung-Box')
+
 cowplot::plot_grid(
   autoplot(Acf(model1$residuals, plot = F)),
   autoplot(model1$residuals)
@@ -303,6 +322,8 @@ cowplot::plot_grid(
 ```
 
 ```{r data13, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+Box.test(model2$residuals,type = 'Ljung-Box')
+
 cowplot::plot_grid(
   autoplot(Acf(model2$residuals)),
   autoplot(model2$residuals)
@@ -310,6 +331,8 @@ cowplot::plot_grid(
 ```
 
 ```{r data14, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+Box.test(model3$residuals,type = 'Ljung-Box')
+
 cowplot::plot_grid(
   autoplot(Acf(model3$residuals)),
   autoplot(model3$residuals)
@@ -317,6 +340,8 @@ cowplot::plot_grid(
 ```
 
 ```{r data15, include=T,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+Box.test(model4$residuals,type = 'Ljung-Box')
+
 cowplot::plot_grid(
 
 autoplot(Acf(model4$residuals,plot = F)),
@@ -326,6 +351,9 @@ autoplot(model4$residuals)
 
 
 ```{r data15a, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+
+Box.test(model5$residuals,type = 'Ljung-Box')
+
 cowplot::plot_grid(
 
 autoplot(Acf(model5$residuals)),
@@ -341,11 +369,11 @@ include_graphics("Backtests.png")
 
 ```
 
-## Forecasting
+# Forecasting
 
 The forecasts for all the models are also very similar, none of the forecasts were able to accurately predict the holdout series. As shown below, the forecasts were the mean of the series and did not capture any of the actual movements in the series. 
 
-```{r data17, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+```{r data17, include=T,echo=F,warning=F,fig.height=4,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
 
 fc = forecast(model0,h=10)
 plot(fc,xlim=c(18750,19000))
@@ -354,7 +382,7 @@ lines((n-d+2):n-2, as.numeric(trim_btc_lr.test), col="red", type="l")
 ```
 
 
-```{r data18, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+```{r data18, include=T,echo=F,warning=F,fig.height=4,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
 
 fc = forecast(model1,xreg = df_nvd_lr.test,h=10)
 plot(fc,xlim=c(1200,1260))
@@ -370,7 +398,7 @@ lines((n-d+2):n-2, as.numeric(trim_btc_lr.test), col="red", type="l")
 
 ```
 
-```{r data20, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+```{r data20, include=F,echo=F,warning=F,fig.height=4,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
 
 fc = forecast(model3,xreg = df_nvd_lr.test,h=10)
 plot(fc,xlim=c(1200,1260))
@@ -378,7 +406,7 @@ lines((n-d+2):n-2, as.numeric(trim_btc_lr.test), col="red", type="l")
 
 ```
 
-```{r data21, include=F,echo=F,warning=F,fig.height=2,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+```{r data21, include=F,echo=F,warning=F,fig.height=4,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
 
 fc = forecast(model4,xreg = df_nvd_lr.test)
 plot(fc,xlim=c(1200,1260))
@@ -386,6 +414,114 @@ lines((n-d+2):n-2, as.numeric(trim_btc_lr.test), col="red", type="l")
 
 ```
 
-## Future steps
+# ARMA-GARCH Modeling
 
-Future steps will be to look if there are any garch effects and attempt to model the volatility of bitcoin by creating a arma-garch model.
+Looking further into the ACF, it appears to have some evidence of serial correlation in the residuals. Especially in the residuals squared and the absolute value of the residuals shown below in Figure \@ref(fig:data22a)).
+
+```{r data22a, include=T,echo=T,warning=FALSE,fig.height=3,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+  autoplot(acf(model4$residuals,plot = F)) + ggtitle('ACF of\nResiduals'),
+  autoplot(acf(model4$residuals^2,plot = F)) + ggtitle('ACF of\nResiduals Squared'),
+  autoplot(acf(abs(model4$residuals),plot = F)) + ggtitle('ACF of\nResiduals Absolute Value'),
+  nrow=1,ncol = 3
+  
+)
+```
+
+Then using the models residuals I can build a garch model around it. The garch model achieves statistically significant coefficients. 
+```{r data22, include=T,echo=T,warning=FALSE}
+gar = garch(model4$residuals,order=c(1,1))
+summary(gar)
+coeftest(gar)
+```
+
+The garch residuals appear to be white noise. 
+```{r data23, include=T,echo=T,warning=FALSE,fig.height=3,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+  autoplot(gar$residuals) + ggtitle('ACF of Residuals'),
+  autoplot(gar$residuals^2) + ggtitle('ACF of Residuals Squared'),
+  nrow=1,ncol = 2
+)
+```
+The residuals also appear to be white noise with the exception of a few most likely spurious correlations. 
+
+```{r data24, include=T,echo=T,warning=FALSE,fig.height=3,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+  autoplot(acf(gar$residuals,plot = F,na.action = na.pass)) + ggtitle('ACF of Residuals'),
+  autoplot(acf(gar$residuals^2,plot = F,na.action = na.pass)) + ggtitle('ACF of Residuals Squared'),
+  nrow=1,ncol = 2
+  
+)
+
+```
+
+We can further confirm that the residuals are white noise by applying the ljung-box test. At a p-value of 0.38, it fails to reject white noise. Indiciating that this garch model appears to be a good fit for the data.
+```{r data25, include=T,echo=T,warning=FALSE}
+Box.test(gar$residuals,type = 'Ljung')
+Box.test(gar$residuals^2,type = 'Ljung')
+```
+
+Finally I can put it all together using the fGarch package and take advantage of the volatility function it calculates. Since the best model has been observed to be an ARIMA (0,0,0), (random walk) model, I can apply the same arma function on just bitcoin itself. Unfortunately, fGarch does not allow to build an ARMA regressed on another series. When put together, all the terms are significant. The residuals are ideal in that they are white noise as shown in the Ljung-Box tests of the residuals below, they all fail to reject white noise. On the other hand, the Jarque-Bera test rejects the null hypothesis that the residuals are normally distributed. The residuals are still ideal but may still have room for improvement in order to achieve normally distributed residuals.
+
+```{r data26, include=T,echo=T,warning=FALSE}
+gFit = garchFit( ~ arma(0, 0) + garch(1, 1), data=trim_btc_lr.train, trace=F)
+
+gRes = ts(residuals(gFit),frequency = 253) 
+
+gRes_s = ts(residuals(gFit,standardize=T),frequency = 253) 
+
+```
+
+The residuals also appear to be white noise with the exception of a few most likely spurious correlations. 
+
+```{r data27, include=T,echo=T,warning=FALSE,fig.height=3,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+  autoplot(acf(gRes_s,plot = F,na.action = na.pass)) + ggtitle('ACF of Residuals'),
+  autoplot(acf(gRes_s^2,plot = F,na.action = na.pass)) + ggtitle('ACF of Residuals Squared'),
+  nrow=1,ncol = 2
+  
+)
+```
+
+
+When testing the GARCH residuals (standardized residuals) the same outcome is computed. Both the GARCH residuals and the residuals squared fail to reject white noise indicating a good fit for the data. 
+
+```{r data28, include=T,echo=T,warning=FALSE}
+Box.test(gRes_s,type = 'Ljung')
+Box.test(gRes_s^2,type = 'Ljung')
+```
+
+Adding to the evidence of white noise, shown below the residuals appear to be white noise. Although, there are a handful of outliers within the residuals that may be impacting the normality. 
+
+The volatility  function follows that variance and shows the increase in volatility surrounding the outliers in the data.
+
+```{r data29, include=T,echo=T,warning=FALSE,fig.height=3,fig.fullwidth=T,fig.align="center",fig.pos='htb!'}
+cowplot::plot_grid(
+  
+autoplot(gRes_s) + ggtitle('GARCH Residuals\n(Standardized)'),
+  
+ggplot(gRes,aes(x=time(gRes),y=gRes)) + geom_line() + 
+  geom_line(aes(y=sqrt(gFit@h.t)),color='green') + 
+  geom_line(aes(y=-sqrt(gFit@h.t)),color='green') + 
+  ggtitle('ARMA Residuals\nwith Volatility'),
+
+ggplot(gRes,aes(x=time(gRes),y=gRes^2)) + geom_line() + 
+  geom_line(aes(y=gFit@h.t),color='red') + 
+  ggtitle('Residuals Squared\nwith Volatility'),
+
+  nrow=1,ncol = 3
+)
+
+```
+
+## Forecasting
+
+Finally I can use the GARCH model to compute the 5-step ahead forecasts of the stock volatility. However, as shown in the forecast, it cannot capture the true variance within the model and is only able to forecast the mean of the series. Overall, there does not appear to be any spurious correlation within the series that is exploitable and the mean of the series is the best forecast.
+
+```{r amzn20, include=T,echo=T,warning=FALSE}
+
+predict(gFit,n.ahead=5,plot=T)
+
+```
+
+
